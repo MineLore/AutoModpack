@@ -166,6 +166,12 @@ public final class UpdatePlanner {
 		Map<String, InstanceTree.TrackedFile> priorGameDir = input.priorGameDir();
 		PlanningSession session = new PlanningSession(input.files());
 		session.restart(RestartReason.SELECTED_MODPACK);
+		if (input.generatedCopies() != null) for (GeneratedCopyState.Entry generated : input.generatedCopies().entries()) session.ownGameDir(generated.logicalPath());
+		if (installed.list != null) for (var item : installed.list) {
+			session.ownGameDirNonMod(item.file);
+			if (item.editable) session.ownGameDir(item.file);
+		}
+		session.ownOwedNonMods(input.owed(), installed.modpackId);
 
 		if (installed.list != null) for (var item : installed.list) {
 			FileKey key = new FileKey(Root.PROJECTION, LogicalPath.normalize(item.file));
@@ -228,6 +234,15 @@ public final class UpdatePlanner {
 				|| input.installedManifest().list == null ? Map.of() : sortedItems(input.installedManifest().list);
 		OwnershipLedger installedLedger = input.installedManifest() == null ? null : OwnershipLedger.fromFields(input.installedManifest().ownershipLedger);
 		PlanningSession session = new PlanningSession(input.files());
+		for (NestedCopy copy : input.previousNestedCopies()) session.ownGameDir(copy.relativePath());
+		for (String path : installedItems.keySet()) session.ownGameDirNonMod(path);
+		for (String path : liveCopyPaths(installedItems, input.forceCopyServicePaths())) if (installedItems.containsKey(path)) session.ownGameDir(path);
+		session.ownOwedNonMods(input.owed(), target.modpackId);
+		if (input.selection() != null && input.selection().previousManifest() != null && input.selection().previousManifest().list != null)
+			for (var item : input.selection().previousManifest().list) {
+				session.ownGameDirNonMod(item.file);
+				if (item.editable) session.ownGameDir(item.file);
+			}
 		Map<String, ModInfo> targetModsByPath = modsByPath(input.targetMods());
 		Map<String, ModInfo> standardModsByPath = modsByPath(input.standardMods());
 		Set<String> listedPins = listedPins(input);
@@ -381,6 +396,8 @@ public final class UpdatePlanner {
 			if (!input.consentedLocalModFiles().isEmpty()) throw new IllegalArgumentException("First-install consent cannot be used after a modpack is installed");
 			return;
 		}
+		// MineLore: the player's own mods are never moved out of mods/, consent or not.
+		if (true) return;
 		if (input.consentedLocalModFiles().isEmpty()) return;
 		Set<String> listedPins = listedPins(input);
 		for (var entry : input.consentedLocalModFiles().entrySet()) {
@@ -519,6 +536,10 @@ public final class UpdatePlanner {
 	}
 
 	private static void planServerKnownCleanup(OwnershipLedger ledger, Set<String> targetPaths, Set<String> listedPins, Map<String, ModInfo> standardModsByPath, PlanningSession session) {
+		/* MineLore: on a first install the server's history is not this client's. A file whose bytes match something the
+		 * server once shipped was put there by the player (or their launcher), not by AutoModpack - matching hashes is how
+		 * a whole Fabulously Optimized install got wiped. Nothing is cleaned up from the server's ledger. */
+		if (true) return;
 		for (OwnershipLedger.Entry entry : ledger.entries().values()) {
 			if (entry.currentStatus() != OwnershipLedger.Status.TOMBSTONE || targetPaths.contains(entry.logicalPath())) continue;
 			if (pinnedLiveMod(listedPins, standardModsByPath, entry.logicalPath())) continue;
@@ -636,7 +657,8 @@ public final class UpdatePlanner {
 			ModInfo target = duplicate.getValue();
 			String targetPath = LogicalPath.normalize(target.relativePath());
 			String standardPath = LogicalPath.normalize(standard.relativePath());
-			if (PinnedMods.matches(listedPins, standard.ids())) continue;
+			// MineLore: every player mod is pinned - their copy stays and loads, the pack's copy does not (PinnedMods.protectedIds).
+			if (true) continue;
 			FileKey oldKey = new FileKey(Root.GAME_DIR, standardPath);
 			boolean owned = isOwned(standard, standardPath, installedLedger);
 			boolean keepStandard = target.ids().stream().anyMatch(idsToKeep::contains);
@@ -769,6 +791,7 @@ public final class UpdatePlanner {
 		}
 
 		void preserve(Preservation preservation) {
+			if (preservation.root() == Root.GAME_DIR && isPlayerFile(new FileKey(Root.GAME_DIR, preservation.relativePath()))) return;
 			preservations.add(preservation);
 		}
 
@@ -777,6 +800,7 @@ public final class UpdatePlanner {
 		}
 
 		void install(FileKey key, String hash, long size, String expectedExistingHash) {
+			if (refusePlayerFile(key, "overwrite")) return;
 			String safeExpectedExistingHash = expectedExistingHash;
 			if (safeExpectedExistingHash == null && key.root() == Root.GAME_DIR) safeExpectedExistingHash = expectedExistingHash(key);
 			operations.put(key, new Operation(key.root(), key.relativePath(), OperationType.INSTALL_OBJECT, hash, size, safeExpectedExistingHash));
@@ -789,6 +813,7 @@ public final class UpdatePlanner {
 		 * the commit's validation refuses loudly.
 		 */
 		void delete(FileKey key, String expectedHash) {
+			if (refusePlayerFile(key, "delete")) return;
 			String safeExpectedHash = expectedHash != null ? expectedHash : expectedExistingHash(key);
 			if (safeExpectedHash == null && key.root() != Root.PROJECTION && absentBefore(key)) {
 				operations.remove(key);
@@ -797,6 +822,51 @@ public final class UpdatePlanner {
 			}
 			operations.put(key, new Operation(key.root(), key.relativePath(), OperationType.DELETE, null, -1, safeExpectedHash));
 			projected.remove(key);
+		}
+
+		/*
+		 * MineLore: the hard guarantee. A file that was in the game directory when this plan started belongs to the
+		 * player unless AutoModpack itself put it there: its generated bundle, the nested copies it generated, and the
+		 * non-mod files an installed manifest of this pack copied out. Such a player file is never deleted, moved to the
+		 * vault or overwritten, whatever pass asks for it - a pass that wants to is dropped here, not half-applied.
+		 */
+		private final Set<String> ownedGameDirPaths = new HashSet<>();
+
+		void ownGameDir(String logicalPath) {
+			if (logicalPath == null) return;
+			try {
+				ownedGameDirPaths.add(LogicalPath.normalize(logicalPath));
+			} catch (RuntimeException ignored) {
+			}
+		}
+
+		/* Non-mod files an earlier, unfinished action of this pack installed or meant to remove are the pack's. Mods named
+		 * only by a journal are not: an owed delete of a mod is exactly what an older build planned against a player's jar. */
+		void ownOwedNonMods(Owed owed, String modpackId) {
+			if (owed == null || owed.operations() == null || modpackId == null || !modpackId.equals(owed.modpackId())) return;
+			for (Operation operation : owed.operations()) if (operation.root() == Root.GAME_DIR) ownGameDirNonMod(operation.relativePath());
+		}
+
+		void ownGameDirNonMod(String logicalPath) {
+			if (logicalPath == null) return;
+			try {
+				String normalized = LogicalPath.normalize(logicalPath);
+				// Only a jar in mods/ can be one of the player's own mods; any other file there the pack shipped is the pack's.
+				if (!ModpackPathPolicy.isModPath(normalized) || !normalized.toLowerCase(java.util.Locale.ROOT).endsWith(".jar")) ownedGameDirPaths.add(normalized);
+			} catch (RuntimeException ignored) {
+			}
+		}
+
+		private boolean isPlayerFile(FileKey key) {
+			if (key.root() != Root.GAME_DIR || absentBefore(key)) return false;
+			String path = LogicalPath.normalize(key.relativePath());
+			return !path.equalsIgnoreCase(ModpackPathPolicy.generatedBundlePath()) && !ownedGameDirPaths.contains(path);
+		}
+
+		private boolean refusePlayerFile(FileKey key, String what) {
+			if (!isPlayerFile(key)) return false;
+			pl.skidam.automodpack_core.Constants.LOGGER.info("Keeping the player's file {}: AutoModpack does not {} files it did not install", LogicalPath.normalize(key.relativePath()), what);
+			return true;
 		}
 
 		private boolean absentBefore(FileKey key) {

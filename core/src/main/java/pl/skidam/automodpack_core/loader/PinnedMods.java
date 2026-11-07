@@ -48,16 +48,26 @@ public final class PinnedMods {
 		return false;
 	}
 
-	/** Union of ids from live jars that match a listed pin. Projection jars intersecting this set are not loaded. */
+	/**
+	 * Union of ids from live jars. Projection jars intersecting this set are not loaded.
+	 *
+	 * <p>MineLore: every jar the player keeps in {@code mods/} counts as pinned, listed or not. The player's copy
+	 * is what loads, and the pack's copy of the same mod stays out, so a duplicate never has to be removed from
+	 * the player's folder. AutoModpack's own jars (itself and its generated bundle) are not the player's.</p>
+	 */
 	public static Set<String> protectedIds(Collection<String> listed, Collection<? extends Collection<String>> liveJarIds) {
-		Set<String> pinned = index(listed);
-		if (pinned.isEmpty() || liveJarIds == null || liveJarIds.isEmpty()) return Set.of();
+		if (liveJarIds == null || liveJarIds.isEmpty()) return Set.of();
 		Set<String> protectedIds = new TreeSet<>();
 		for (Collection<String> jarIds : liveJarIds) {
 			Set<String> ids = ids(jarIds);
-			if (matches(pinned, ids)) protectedIds.addAll(ids);
+			if (ids.isEmpty() || ids.stream().anyMatch(PinnedMods::isAutoModpackOwnId)) continue;
+			protectedIds.addAll(ids);
 		}
 		return Set.copyOf(protectedIds);
+	}
+
+	private static boolean isAutoModpackOwnId(String id) {
+		return ModpackPathPolicy.isSelfModId(id) || "automodpack_generated".equals(id);
 	}
 
 	public static boolean protects(Collection<String> protectedIds, Collection<String> jarIds) {

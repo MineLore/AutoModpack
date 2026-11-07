@@ -30,6 +30,7 @@ class UpdatePreviewTest {
 	private static final String OLD_HASH = "2222222222222222222222222222222222222222";
 	private static final String OTHER_HASH = "3333333333333333333333333333333333333333";
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void planningProducesTheCanonicalPreviewConsequences() {
 		ModpackJsons.ModpackContentFields target = manifest(

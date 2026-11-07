@@ -121,6 +121,7 @@ class OfflineRepairTest {
 		assertEquals(0, receipt.repairedMaterializedFiles());
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void appliesOnlySelectedEditableResetsAndUnownedModArchival() throws Exception {
 		ClientStorage storage = storage();
@@ -146,6 +147,7 @@ class OfflineRepairTest {
 		assertEquals(ClientStateJournal.Kind.REPAIR, ClientStateJournal.open(storage).head().kind());
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void repairCheckpointCapturesReplacedBytesWhenATimelineExists() throws Exception {
 		ClientStorage storage = storage();
@@ -267,6 +269,7 @@ class OfflineRepairTest {
 		assertEquals(journalBefore, new JournalMirror(storage).entries(target.manifest().modpackId()), "repair never rewrites the mirror");
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void leavesOnlyUnavailableFindingsAfterApplyingEveryLocalRepair() throws Exception {
 		ClientStorage storage = storage();

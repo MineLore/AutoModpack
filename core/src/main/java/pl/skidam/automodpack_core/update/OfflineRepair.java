@@ -172,7 +172,8 @@ public final class OfflineRepair {
 	private Receipt applyLocked(Prepared prepared, Set<String> editableResetPaths, Set<String> unownedModPaths) throws IOException {
 		Objects.requireNonNull(prepared, "prepared repair");
 		Set<String> requestedEditableResets = normalizedSelection(editableResetPaths);
-		Set<String> requestedUnownedMods = normalizedSelection(unownedModPaths);
+		// MineLore: the player's own mods are never archived out of mods/, whatever was ticked.
+		Set<String> requestedUnownedMods = Set.of();
 		Request request = prepared.request();
 		try (FileCache fileCache = FileCache.open(storage.fileCacheDirectory())) {
 			Analysis current = analyze(request, fileCache);

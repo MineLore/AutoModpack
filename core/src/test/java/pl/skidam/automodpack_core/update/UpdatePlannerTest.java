@@ -64,6 +64,7 @@ class UpdatePlannerTest {
 				&& operation.operation() == OperationType.INSTALL_OBJECT && TARGET_HASH.equals(operation.expectedObjectHash())));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void firstInstallConsentPreservesAndRemovesAnObservedLocalMod() {
 		String path = "mods/local.jar";
@@ -80,6 +81,7 @@ class UpdatePlannerTest {
 		assertTrue(plan.restartReasons().contains(RestartReason.REMOVED_LOCAL_MODS));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void firstInstallConsentPreservesBeforeReplacingTheSameLivePath() {
 		String path = "mods/shared.jar";
@@ -204,6 +206,7 @@ class UpdatePlannerTest {
 		assertTrue(plan.operations().stream().noneMatch(operation -> operation.root() == Root.GAME_DIR && operation.relativePath().equals(path)));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void firstInstallPreservesAnUnownedSameIdMod() {
 		ModpackJsons.ModpackContentFields target = manifest(Map.of("mods/server.jar", item("mods/server.jar", TARGET_HASH, 9, "mod")),
@@ -221,6 +224,7 @@ class UpdatePlannerTest {
 				&& operation.operation() == OperationType.DELETE && OLD_HASH.equals(operation.expectedExistingHash())));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void byteIdenticalLiveCopyIsDeletedWithoutConflictOrVault() {
 		ModpackJsons.ModpackContentFields target = manifest(Map.of("mods/server.jar", item("mods/server.jar", TARGET_HASH, 9, "mod")),
@@ -300,6 +304,7 @@ class UpdatePlannerTest {
 		assertFalse(plan.projectedFinalState().stream().anyMatch(file -> file.root() == Root.PROJECTION && file.relativePath().equals(stray) && file.present()));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void cleanupUsesHistoricalHashAndSizeForManagedFiles() {
 		ModpackJsons.ModpackContentFields target = manifest(Map.of(
@@ -531,6 +536,7 @@ class UpdatePlannerTest {
 				.findFirst().orElseThrow().expectedObjectHash());
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void freshClientMayRemoveOnlyExactServerKnownTombstoneBytes() {
 		ModpackJsons.ModpackContentFields target = manifest(Map.of(), ledger(entry("mods/removed.jar", OLD_HASH, 8, OwnershipLedger.Status.TOMBSTONE)));
@@ -620,6 +626,7 @@ class UpdatePlannerTest {
 				&& file.relativePath().equals("mods/edit.jar") && OTHER_HASH.equals(file.expectedHash())));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void candidateWithoutSurvivingColliderIsDropped() {
 		ModpackJsons.ModpackContentFields target = manifest(Map.of("mods/server.jar", item("mods/server.jar", TARGET_HASH, 9, "mod")),
@@ -666,6 +673,7 @@ class UpdatePlannerTest {
 		assertTrue(plan.restartReasons().contains(RestartReason.FIXED_NESTED_MODS));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void dependencyDrivenCopyLivesAndDiesWithTheDependentRoot() {
 		ModpackJsons.ModpackContentFields targetWithDuplicate = manifest(Map.of("mods/server.jar", item("mods/server.jar", TARGET_HASH, 9, "mod")),
@@ -715,6 +723,7 @@ class UpdatePlannerTest {
 		assertEquals(TARGET_HASH, plan.generatedCopies().get(0).sha1());
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void duplicateResolutionPicksTheHigherVersionPackModPerSourceFile() {
 		ModpackJsons.ModpackContentFields target = manifest(Map.of(
@@ -798,6 +807,7 @@ class UpdatePlannerTest {
 		assertTrue(plan.operations().stream().noneMatch(operation -> operation.root() == Root.GAME_DIR && operation.relativePath().equals(kept)));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void onlyAPathAbsentBeforeThePlanLosesItsBaselineFreeDelete() {
 		FileKey tombstone = new FileKey(Root.OVERLAY, "config/a.toml");
@@ -811,6 +821,7 @@ class UpdatePlannerTest {
 		assertEquals(List.of(new Operation(Root.GAME_DIR, "config/c.toml", OperationType.DELETE, null, -1, null)), session.operations());
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void aTombstoneDeletesTheLiveCopyItObservesAndNothingElse() {
 		String path = "config/example-client.toml";
@@ -828,6 +839,7 @@ class UpdatePlannerTest {
 		assertTrue(withoutLive.operations().stream().noneMatch(operation -> operation.root() == Root.GAME_DIR));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void everyPlanOnTopOfAnOwedOneInheritsTheDeletesOnlyItsJournalStillNames() {
 		// The owed action removed a duplicate of a pack mod, but a process held it: no manifest or ledger names the jar, only the journal.

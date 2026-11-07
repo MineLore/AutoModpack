@@ -897,6 +897,7 @@ class UpdateCommitTest {
 		}
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void firstInstallPreservesLocalSameIdModBeforeProjectionApply() throws Exception {
 		ClientStorage storage = UpdateTestFixtures.storage(temporaryDirectory);
@@ -921,6 +922,7 @@ class UpdateCommitTest {
 		assertTrue(FileIntegrity.matches(storage.objectFile(localHash), localBytes.length, localHash));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void firstInstallConsentPreservesLocalBytesBeforeSamePathReplacement() throws Exception {
 		ClientStorage storage = UpdateTestFixtures.storage(temporaryDirectory);
@@ -1112,6 +1114,7 @@ class UpdateCommitTest {
 		assertTrue(FileIntegrity.matches(storage.objectFile(serverHash), serverBytes.length, serverHash));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void removalSwapsToAnEmptyProjectionAndKeepsTheMirrorHistory() throws Exception {
 		ClientStorage storage = UpdateTestFixtures.storage(temporaryDirectory);

@@ -15,6 +15,7 @@ class PinnedModsTest {
 		assertEquals(List.of("controlify", "ias"), PinnedMods.normalize(List.of(" Controlify ", "IAS", "automodpack", "controlify")));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void protectsProjectionIdsThatOverlapAPresentPinnedLiveJar() {
 		Set<String> protectedIds = PinnedMods.protectedIds(List.of("controlify"), List.of(Set.of("controlify-pro", "controlify"), Set.of("sodium")));
@@ -23,6 +24,7 @@ class PinnedModsTest {
 		assertFalse(PinnedMods.protects(protectedIds, Set.of("sodium")));
 	}
 
+	@org.junit.jupiter.api.Disabled("MineLore: AutoModpack no longer deletes, archives or overwrites a player's own file; see MineLoreKeepPlayerFilesTest")
 	@Test
 	void missingLiveJarDoesNotProtectThePackCopy() {
 		assertTrue(PinnedMods.protectedIds(List.of("controlify"), List.of(Set.of("sodium"))).isEmpty());
