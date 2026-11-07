@@ -119,8 +119,12 @@ public class HandshakeS2CPacket {
 			}
 
 			if (!clientHandshakePacket.amVersion.equals(AM_VERSION)) {
+				/* MineLore: the stock AutoModpack moves a player's own mods out of the mods folder on the
+				 * first install. This server only lets in the build that keeps them, so say where it is. */
+				String link = serverConfig.nagClickableLink == null ? "" : serverConfig.nagClickableLink.trim();
 				Component reason = VersionedText.literal("AutoModpack version mismatch. This server runs " + AM_VERSION
-						+ ", so install that version of AutoModpack for " + LOADER_MANAGER.getPlatformType().toString().toLowerCase(Locale.ROOT) + " to join.");
+						+ ", so install that version of AutoModpack for " + LOADER_MANAGER.getPlatformType().toString().toLowerCase(Locale.ROOT) + " to join."
+						+ (link.isEmpty() ? "" : "\n\nНужен AutoModpack " + AM_VERSION + " (не трогает ваши моды): " + link));
 				connection.send(new ClientboundLoginDisconnectPacket(reason));
 				connection.disconnect(reason);
 				return;

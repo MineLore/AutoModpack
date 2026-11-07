@@ -43,7 +43,7 @@ public final class OfflineRepairScreen extends VersionedScreen {
 	private OfflineRepair.Receipt receipt;
 	// Checkbox convention: [x] checked keeps the files in place; unchecked is the removal consent
 	// (copies land in the recovered folder). Same meaning on every screen.
-	private boolean keepUnownedMods;
+	private boolean keepUnownedMods = true; // MineLore: a player's own mods stay unless they opt out
 	private boolean busy;
 	private boolean presentingFailure;
 	private boolean closed;

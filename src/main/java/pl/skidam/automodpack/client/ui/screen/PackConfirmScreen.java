@@ -50,7 +50,7 @@ public final class PackConfirmScreen extends VersionedScreen {
 	private final Countdown countdown = new Countdown(TIMER_SECONDS);
 	private final List<String> unverifiedPaths = new ArrayList<>();
 	private final List<UnverifiedJarList.UnverifiedFile> unverifiedFiles = new ArrayList<>();
-	private boolean keepExistingMods;
+	private boolean keepExistingMods = true; // MineLore: a player's own mods stay unless they opt out
 	private boolean acknowledged;
 	private boolean finished;
 	private AbstractWidget cancelButton;
